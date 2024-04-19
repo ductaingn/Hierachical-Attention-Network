@@ -17,12 +17,13 @@ def clean_text(text):
     return text.strip()
 
 emmbed_dict = {}
-with open('glove.6B.200d.txt','r') as f:
+with open('Data/glove.6B.200d.txt','r') as f:
     for line in f:
         values = line.split()
         word = values[0]
         vector = np.asarray(values[1:],'float32')
         emmbed_dict[word]=vector
+print('Loaded embeed dictionary')
 
 text_file = open('Data/texts.txt','rt')
 score_file = open('Data/score.txt','rt')
@@ -35,9 +36,9 @@ for line in score_file:
     scores.append(int(line)-1)
     
 X = []
-for text in texts:
+for i in range(len(texts)):
     # Clean text then split it into sentences
-    text = clean_text(text)
+    text = clean_text(texts[i])
     text = text.split('.')
 
     vectorized_text = []
@@ -65,13 +66,15 @@ for text in texts:
         if(len(vectorized_sentence)>0):
             vectorized_text.append(vectorized_sentence)
 
+    # Ignore empty text
+    if(len(vectorized_text)==0):
+        scores.pop(i)
+        continue
+
     X.append(vectorized_text)
 
-# One-hot encoding 
-Y = torch.nn.functional.one_hot(torch.FloatTensor(scores).long())
-
 # Take 10% of dataset 
-X, _, Y, _ = train_test_split(X, Y, train_size=0.1)
+X, _, Y, _ = train_test_split(X, scores, train_size=0.1)
 
 with open('Data/X.pickle','wb') as file:
    pickle.dump(X,file)
